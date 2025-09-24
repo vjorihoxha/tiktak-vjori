@@ -7,10 +7,8 @@ use App\Repository\EmployeeRepository;
 use App\Service\EmployeeMapper\Provider1EmployeeMapper;
 use App\Service\EmployeeService;
 use App\Service\TrackTikApiService;
-use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -25,22 +23,18 @@ class EmployeeServiceTest extends TestCase
     protected function setUp(): void
     {
         $this->employeeRepository = $this->createMock(EmployeeRepository::class);
-        $entityManager = $this->createMock(EntityManagerInterface::class);
         $this->trackTikApiService = $this->createMock(TrackTikApiService::class);
         $this->validator = $this->createMock(ValidatorInterface::class);
         $this->logger = $this->createMock(LoggerInterface::class);
-        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 
         $provider1Mapper = new Provider1EmployeeMapper();
         $mappers = [$provider1Mapper];
 
         $this->employeeService = new EmployeeService(
             $this->employeeRepository,
-            $entityManager,
             $this->trackTikApiService,
             $this->validator,
             $this->logger,
-            $eventDispatcher,
             $mappers
         );
     }
@@ -74,15 +68,10 @@ class EmployeeServiceTest extends TestCase
             ->method('validate')
             ->willReturn(new ConstraintViolationList());
 
-        $this->employeeRepository
-            ->expects($this->once())
-            ->method('save')
-            ->with($this->isInstanceOf(Employee::class), true);
-
         $this->trackTikApiService
             ->expects($this->once())
             ->method('createEmployee')
-            ->willReturn(['id' => 123]);
+            ->willReturn(['data' => ['id' => 123]]);
 
         $employee = $this->employeeService->processEmployeeData('provider1', $providerData);
 
@@ -140,7 +129,7 @@ class EmployeeServiceTest extends TestCase
             ->expects($this->once())
             ->method('updateEmployee')
             ->with(123, $this->isType('array'))
-            ->willReturn(['id' => 123]);
+            ->willReturn(['data' => ['id' => 123]]);
 
         $employee = $this->employeeService->processEmployeeData('provider1', $providerData);
 
@@ -160,11 +149,58 @@ class EmployeeServiceTest extends TestCase
     {
         $invalidData = [
             'id' => '12345',
+            // Missing required personal_info
         ];
 
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Invalid employee data format for provider: provider1');
 
         $this->employeeService->processEmployeeData('provider1', $invalidData);
+    }
+
+    public function testSyncToTrackTikReturnsTrue(): void
+    {
+        $employee = new Employee();
+        $employee->setProvider('provider1');
+        $employee->setFirstName('John');
+        $employee->setLastName('Doe');
+        $employee->setEmail('john.doe@example.com');
+
+        $this->trackTikApiService
+            ->expects($this->once())
+            ->method('createEmployee')
+            ->willReturn(['data' => ['id' => 456]]);
+
+        $this->employeeRepository
+            ->expects($this->once())
+            ->method('save')
+            ->with($employee, true);
+
+        $result = $this->employeeService->syncToTrackTik($employee);
+
+        $this->assertTrue($result);
+        $this->assertEquals(456, $employee->getTrackTikId());
+    }
+
+    public function testSyncToTrackTikReturnsFalseOnError(): void
+    {
+        $employee = new Employee();
+        $employee->setProvider('provider1');
+        $employee->setFirstName('John');
+        $employee->setLastName('Doe');
+        $employee->setEmail('john.doe@example.com');
+
+        $this->trackTikApiService
+            ->expects($this->once())
+            ->method('createEmployee')
+            ->willThrowException(new \RuntimeException('API Error'));
+
+        $this->logger
+            ->expects($this->once())
+            ->method('error');
+
+        $result = $this->employeeService->syncToTrackTik($employee);
+
+        $this->assertFalse($result);
     }
 }
