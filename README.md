@@ -134,20 +134,6 @@ GET /api/employees?provider=provider1
 ```http
 POST /api/employees/sync
 ```
-
-## Configuration
-
-Update the `.env` file with your TrackTik API credentials:
-
-```bash
-# TrackTik API Configuration
-TRACKTIK_CLIENT_ID=your-client-id
-TRACKTIK_CLIENT_SECRET=your-client-secret
-TRACKTIK_BASE_URL=https://smoke.staffr.net
-TRACKTIK_USERNAME=your-username
-TRACKTIK_PASSWORD=your-password
-```
-
 ## Available Make Commands
 
 ```bash
