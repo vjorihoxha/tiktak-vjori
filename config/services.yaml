@@ -1,0 +1,39 @@
+parameters:
+    tracktik.client_id: '%env(TRACKTIK_CLIENT_ID)%'
+    tracktik.client_secret: '%env(TRACKTIK_CLIENT_SECRET)%'
+    tracktik.base_url: '%env(TRACKTIK_BASE_URL)%'
+    tracktik.username: '%env(TRACKTIK_USERNAME)%'
+    tracktik.password: '%env(TRACKTIK_PASSWORD)%'
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+
+    # TrackTik API Service
+    App\Service\TrackTikApiService:
+      arguments:
+        $clientId: '%tracktik.client_id%'
+        $clientSecret: '%tracktik.client_secret%'
+        $baseUrl: '%tracktik.base_url%'
+        $initialAccessToken: '%env(default::TRACKTIK_ACCESS_TOKEN)%'
+        $refreshToken: '%env(TRACKTIK_REFRESH_TOKEN)%'
+
+    # Employee Mappers - register individually
+    App\Service\EmployeeMapper\Provider1EmployeeMapper:
+        tags: ['app.employee_mapper']
+
+    App\Service\EmployeeMapper\Provider2EmployeeMapper:
+        tags: ['app.employee_mapper']
+
+    # Employee Service with tagged mappers
+    App\Service\EmployeeService:
+        arguments:
+            $mappers: !tagged_iterator app.employee_mapper

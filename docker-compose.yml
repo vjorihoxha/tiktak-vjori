@@ -1,0 +1,51 @@
+services:
+  php:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tracktik_php
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      - APP_ENV=dev
+      - DATABASE_URL=postgresql://tracktik:password@postgres:5432/tracktik_db
+    depends_on:
+      - postgres
+    networks:
+      - tracktik_network
+
+  nginx:
+    image: nginx:alpine
+    container_name: tracktik_nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/app
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
+    networks:
+      - tracktik_network
+
+  postgres:
+    image: postgres:15
+    container_name: tracktik_postgres
+    environment:
+      POSTGRES_DB: tracktik_db
+      POSTGRES_USER: tracktik
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - tracktik_network
+
+volumes:
+  database_data:
+  postgres_data:
+
+networks:
+  tracktik_network:
+    driver: bridge

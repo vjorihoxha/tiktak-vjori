@@ -1,0 +1,109 @@
+### Test Provider 1 Employee Data
+POST http://localhost:8080/api/employees/provider1
+Content-Type: application/json
+
+{
+  "id": "12345",
+  "personal_info": {
+    "first_name": "John",
+    "last_name": "Doe",
+    "email_address": "john.doe@example.com",
+    "phone": "+1-555-123-4567",
+    "birth_date": "1985-06-15"
+  },
+  "employment": {
+    "hire_date": "2023-01-15",
+    "department_name": "Security",
+    "job_title": "Security Guard"
+  }
+}
+
+### Test Provider 2 Employee Data
+POST http://localhost:8080/api/employees/provider2
+Content-Type: application/json
+
+{
+  "employee_id": "EMP-001",
+  "name": {
+    "given": "Jane",
+    "family": "Smith"
+  },
+  "contact": {
+    "email": "jane.smith@company.com",
+    "mobile": "555.987.6543"
+  },
+  "profile": {
+    "dob": "1990-03-22",
+    "start_date": "2022-08-10",
+    "division": "Operations",
+    "role": "Operations Manager"
+  }
+}
+
+### Update existing Provider 1 Employee
+POST http://localhost:8080/api/employees/provider1
+Content-Type: application/json
+
+{
+  "id": "12345",
+  "personal_info": {
+    "first_name": "John",
+    "last_name": "Smith",
+    "email_address": "john.smith@example.com",
+    "phone": "+1-555-123-4567",
+    "birth_date": "1985-06-15"
+  },
+  "employment": {
+    "hire_date": "2023-01-15",
+    "department_name": "Operations",
+    "job_title": "Senior Security Guard"
+  }
+}
+
+### Get all employees
+GET http://localhost:8080/api/employees
+
+### Get employees by provider
+GET http://localhost:8080/api/employees?provider=provider1
+
+### Sync all pending employees
+POST http://localhost:8080/api/employees/sync
+
+### Invalid Provider 1 Data (missing required fields)
+POST http://localhost:8080/api/employees/provider1
+Content-Type: application/json
+
+{
+  "id": "99999",
+  "personal_info": {
+    "first_name": "Test"
+    // Missing last_name and email_address
+  }
+}
+
+### Invalid Provider 2 Data (invalid email)
+POST http://localhost:8080/api/employees/provider2
+Content-Type: application/json
+
+{
+  "employee_id": "EMP-999",
+  "name": {
+    "given": "Invalid",
+    "family": "User"
+  },
+  "contact": {
+    "email": "not-an-email"
+  }
+}
+
+### Invalid JSON
+POST http://localhost:8080/api/employees/provider1
+Content-Type: application/json
+
+{
+  "id": "invalid"
+  // Missing comma and quotes
+  personal_info: {
+    first_name: "Invalid"
+  }
+}
